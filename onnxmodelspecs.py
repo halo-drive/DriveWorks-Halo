@@ -1,7 +1,7 @@
 import onnx
 
 # Load the ONNX model
-model_path = "yolov8x-seg.onnx"  # Replace with your ONNX model path
+model_path = "yolov8n-seg.onnx"  # Replace with your ONNX model path
 model = onnx.load(model_path)
 
 # Check inputs
