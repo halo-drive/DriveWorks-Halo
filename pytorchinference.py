@@ -11,13 +11,6 @@ print(f"Using device: {device}")
 
 
 def load_model(model_path):
-    """
-    Load the YOLO model with error handling and verification.
-    Args:
-        model_path (str): Path to the YOLO model file
-    Returns:
-        YOLO: Loaded model instance
-    """
     try:
         model = YOLO(model_path)
         print(f"Model loaded successfully from: {model_path}")
@@ -28,13 +21,6 @@ def load_model(model_path):
 
 
 def preprocess_image(image_path):
-    """
-    Preprocess the image for YOLO inference.
-    Args:
-        image_path (str): Path to input image
-    Returns:
-        PIL.Image: Preprocessed image
-    """
     try:
         # Load image in RGB format
         image = Image.open(image_path).convert("RGB")
@@ -46,13 +32,6 @@ def preprocess_image(image_path):
 
 
 def postprocess(results):
-    """
-    Postprocess YOLO results.
-    Args:
-        results: YOLO model output
-    Returns:
-        list: Processed detections
-    """
     try:
         processed_results = []
         for result in results:
@@ -70,14 +49,6 @@ def postprocess(results):
 
 
 def draw_detections(image, detections):
-    """
-    Draw predictions on the image with error handling.
-    Args:
-        image: Original image
-        detections: List of processed detections
-    Returns:
-        numpy.ndarray: Annotated image
-    """
     try:
         image_copy = image.copy()
         for det in detections:
@@ -102,14 +73,6 @@ def draw_detections(image, detections):
 
 
 def main(model_path, image_path, class_names, conf_threshold=0.25):
-    """
-    Run inference pipeline with comprehensive error handling.
-    Args:
-        model_path (str): Path to YOLO model
-        image_path (str): Path to input image
-        class_names (list): List of class names
-        conf_threshold (float): Confidence threshold for detections
-    """
     try:
         # Load model
         model = load_model(model_path)
