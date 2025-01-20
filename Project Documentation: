@@ -1,0 +1,107 @@
+Project Documentation:
+
+directory explanations:
+-'.idea' = pycharm ide configuration files especially within the project folder.
+-'.venv' = virtual environment for any python project to run, contains all the packages 
+- classes.py = contains all the class ids (in form of dictionary to the )
+- main.py - main file which incorporates all the scripts and does the inference and starts the project(on the terminal run `python3 main.py`)
+- mcmcontrol.py - handles mcm control command api, needed to creating mcm objects
+- braking.py/ steer.py - handles braking/steering control uses mcmcontrol objects
+- requirements.txt - has a list of all the project dependecies
+
+
+Note: before launching up the project please activate the virtual environment which loads all the dependencies
+
+follow-ups to establish the project:
+
+1.Set up a YOLOv8 object detection model to detect stop signs from a camera feed.
+2.Created a virtual CAN bus (vcan0) to simulate communication with a vehicle's braking system.
+3.Integrated the object detection model with a CAN bus braking system to apply brakes when a stop sign is detected.
+4.Implemented dynamic brake control where the braking force is proportional to the confidence level of the stop sign detection.
+5.Added lidar processing to visualize lidar data alongside the camera feed.
+6.Refined the code to improve performance and address potential issues like lag and unresponsive windows.
+7.Explored options for using multiple cameras for object detection, including stitching frames and performing separate inference.
+8.Discussed strategies for testing the stop sign detection and braking system in a safe and controlled environment.
+9.Addressed various error messages and provided solutions to resolve them.
+10.Modularized the code into classes and functions for better organization and reusability.
+11.Incorporated logging to record important events and debug the application.
+
+
+remove cuda and nvidia packages:
+sudo dpkg -r --force-all $(dpkg -l | grep cuda | awk '{print $2}')
+sudo dpkg -r --force-all $(dpkg -l | grep nvidia | awk '{print $2}')
+
+
+install fresh cuda and nvidia drivers: (12.4) + 565.57.01
+please do it over network deb file for faster setup and easy dependency resolver: 
+	* sudo wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.1-1_all.deb
+	* sudo dpkg -i cuda-keyring_1.1-1_all.deb
+	* sudo apt-get update
+	* sudo apt-get -y install cuda-toolkit-12-4
+
+installing tensorrt 10.3 for 20.04 focal with upto CUDA 12.5 support
+download - nv-tensorrt-local-repo-ubuntu2004-10.3.0-cuda-12.5_1.0-1_amd64.deb
+add new repo key : 	sudo cp /var/nv-tensorrt-local-repo-ubuntu2004-10.3.0-cuda-12.5/nv-tensorrt-local-3628E411-keyring.gpg /usr/share/keyrings/
+create repo file in /etc/apt/sources.list.d/ : echo "deb [signed-by=/usr/share/keyrings/nv-tensorrt-local-3628E411-keyring.gpg] file:/var/nv-tensorrt-local-repo-ubuntu2004-10.3.0-cuda-12.5 /" | sudo tee /etc/apt/sources.list.d/tensorrt.list
+update package list: sudo apt update
+install tensorrt : sudo apt install tensorrt
+
+start exporting the model to TRT engine format: 
+yolo export model=yolov8x-seg.pt format=engine device=0 imgsz=640,640 half=True workspace=4
+ln -s /usr/lib/python3/dist-packages/tensorrt* ~/Desktop/YoloDetection/venv/lib/python3.10/site-packages/
+m
+check for installed versions of dependecies:
+python3 -c "import torch; print(torch.version.cuda)"
+python3 -c "import tensorrt; print(tensorrt.__version__)"
+
+export PATH=/usr/src/tensorrt/bin${PATH:+:${PATH}}
+
+venv status: /home/pomo/Desktop/YoloDetection/.venv/bin/python /home/pomo/Desktop/YoloDetection/checkenv.py 
+Python version: 3.10.15 (main, Sep  7 2024, 18:35:33) [GCC 9.4.0]
+Torch version: 2.5.0+cu124
+CUDA available: True
+CUDA version: 12.4
+GPU device: NVIDIA GeForce RTX 3060
+TensorRT version: 10.3.0
+
+
+training for lane detection
+TuSimple dataset only provides annotations for the 20th frame of each video sequence, which explains why we have ~3.6K labeled images out of 72K total images.
+covert tusimple data format to yolo train format
+yolo task=segment mode=train model=yolov8x-seg.pt data=dataset/tusimple.yaml epochs=100 imgsz=640
+
+
+need to use FP16 precision, for better GLOPS output, set the model to run on the available
+
+On the DRIVE AGX ORIN SoC:
+run this for converting a model into the highest precision with min to max shapes supported and the argument for the most optimised shapes (640x640):
+see example below, just replace model file name and the location of the model:
+/usr/src/tensorrt/bin/trtexec \
+    --onnx=/home/pomo/DriveGXO/yolov8x-seg.onnx \
+    --saveEngine=/home/pomo/DriveGXO/yolov8x-seg_fp16.trt \
+    --fp16 \
+    --workspace=4096 \
+    --verbose \
+    --minShapes=images:1x3x320x320 \
+    --optShapes=images:1x3x640x640 \
+    --maxShapes=images:1x3x1280x1280
+
+run a benchmark for the converted model by running this command to see the engine(model) archittecture and the bechmark score
+see example below
+
+
+/usr/src/tensorrt/bin/trtexec \
+    --loadEngine=/home/pomo/DriveGXO/yolov8x-seg_fp16.trt \
+    --verbose
+
+
+save the model to a the desired folder,
+next step is to get the requirements satisfied with the project environment
+get the pycharm IDE and set it up accordingly.
+use the python interpreter 3.8, and create a venv inside the project directory
+next is to satisfy the basic requirements, one by one, by first running the checkenv.py to get the idea of the environment you are trying to set up
+
+
+
+after all the environmnmt variables and necessary requirements are satisfied, next step is run the bechmark again inside the venv
+
